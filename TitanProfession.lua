@@ -21,6 +21,7 @@ local GetSpellInfo = function(spellIndex, book)
 		if not spellID then return end ;
 
 		local data = C_Spell.GetSpellInfo(spellID)
+		if not data then return end
 		-- name, rank, icon, castTime, minRange, maxRange, spellID, originalIcon
 		return data.name, data.rank, data.iconID, data.castTime, data.minRange, data.maxRange, data.spellID, data.originalIcon
 	else

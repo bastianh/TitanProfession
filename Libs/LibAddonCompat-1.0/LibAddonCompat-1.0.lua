@@ -1,4 +1,4 @@
-local MAJOR, MINOR = "LibAddonCompat-1.0", 14
+local MAJOR, MINOR = "LibAddonCompat-1.0", 15
 ---@class LibAddonCompat
 local LibAddonCompat = LibStub:NewLibrary(MAJOR, MINOR)
 if not LibAddonCompat then return end
@@ -10,9 +10,27 @@ LibAddonCompat.PROFESSION_FISHING_INDEX = 4
 LibAddonCompat.PROFESSION_COOKING_INDEX = 5
 LibAddonCompat.PROFESSION_FIRST_AID_INDEX = 6
 
-if (LE_EXPANSION_LEVEL_CURRENT >= LE_EXPANSION_CATACLYSM) then
+-- Some newer classic clients (e.g. WoW Forever) report a classic expansion level but only offer the modern profession API
+local hasModernProfessionApi = GetProfessions and GetProfessionInfo and not GetSkillLineInfo
+if ((LE_EXPANSION_LEVEL_CURRENT or 0) >= LE_EXPANSION_CATACLYSM or hasModernProfessionApi) then
+	local SKILL_LINE_FIRST_AID = 129
+
+	-- the modern GetProfessions() does not return First Aid, so look for it among the profession indices
+	local function FindFirstAidIndex()
+		for index = 1, 50 do
+			local ok, name, _, _, _, _, _, skillLine = pcall(GetProfessionInfo, index)
+			if ok and name and (skillLine == SKILL_LINE_FIRST_AID or name == PROFESSIONS_FIRST_AID) then
+				return index
+			end
+		end
+	end
+
 	function LibAddonCompat:GetProfessions()
-		return GetProfessions()
+		local prof1, prof2, archaeology, fishing, cooking, firstAid = GetProfessions()
+		if not firstAid and hasModernProfessionApi then
+			firstAid = FindFirstAidIndex()
+		end
+		return prof1, prof2, archaeology, fishing, cooking, firstAid
 	end
 	function LibAddonCompat:GetProfessionInfo(skillIndex)
 		return GetProfessionInfo(skillIndex)
